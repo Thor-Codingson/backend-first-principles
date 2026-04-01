@@ -4,6 +4,13 @@ const port = 3000
 app.use(express.json())
 
 
+const books = [
+  { id: 1, title: 'Clean Code', author: 'Robert Martin', tags: ['programming'], created_at: '2024-01-15' },
+  { id: 2, title: 'Designing Data-Intensive Apps', author: 'Martin Kleppmann', tags: ['systems', 'databases'], created_at: '2024-02-20' },
+  { id: 3, title: 'The Pragmatic Programmer', author: 'David Thomas', tags: ['programming', 'career'], created_at: '2024-03-10' },
+];
+
+
 function corsMiddleware(req, res, next){
   const origin = req.headers.origin;
 
@@ -24,8 +31,14 @@ app.get('/', (req, res) => {
 })
 
 app.get('/debug', (req, res) => {
-  console.log(req.headers);  // Print EVERYTHING the client sent
-  res.json(req.headers);     // Send it back so you can see it
+  //console.log(req.headers);  // Print EVERYTHING the client sent
+  //res.json(req.headers);     // Send it back so you can see it
+
+  console.log('params:', req.params);
+  console.log('query:', req.query);
+  console.log('body:', req.body);
+  res.json({ params: req.params, query: req.query, body: req.body });
+
 });
 
 app.get('/public', (req,res) => {
@@ -44,6 +57,66 @@ app.post('/user', (req, res) => {
     return res.status(400).send({"error": "Name is required"})
 
   res.status(201).json({created: true});
+})
+
+app.get('/api/v1/books', (req, res) => {
+
+  let result = books;
+
+  if (req.query.author) {
+    result = books.filter(book => book.author.toLowerCase().includes(req.query.author.toLowerCase()))
+  }
+
+  const filteredBooks = result.map(book => {
+    return {
+      id: book.id,
+      title: book.title,
+      author: book.author
+    }
+  });
+
+  res.json(filteredBooks)
+})
+
+app.get('/api/v2/books', (req, res) => {
+
+  let result = books;
+
+  if (req.query.author) {
+    result = books.filter(book => book.author.toLowerCase().includes(req.query.author.toLowerCase()))
+  }
+
+  res.json(result);
+})
+
+app.get('/api/v1/books/:id', (req, res) => {
+
+  const { id } = req.params
+
+  const result = books.find(book => book.id === Number(id))
+
+  if(!result) {
+    return res.status(404).json({'message': 'Book not found'})
+  }
+
+  res.json(result)
+})
+
+
+app.get('/api/v1/books/:bookId/tags', (req, res) => {
+  const { bookId } = req.params
+
+  const result = books.find(book => book.id === Number(bookId))
+
+  if(!result) {
+    return res.status(404).json({'message': 'Book not found'})
+  }
+
+  res.json(result.tags)
+})
+
+app.use((req, res) => {
+  res.status(404).json({error: "Route not found"})
 })
 
 app.listen(port, () => {
