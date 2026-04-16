@@ -89,6 +89,41 @@ app.get('/api/v2/books', (req, res) => {
   res.json(result);
 })
 
+app.post('/api/v1/books', (req, res) => {
+
+  const {title, author, tags} = req.body
+
+  if (!title || title.trim() === '' || !author || author.trim() === '') {
+    return res.status(404).send({"error" : "Name or title is required"})
+  }
+
+  const newBook = {
+    id: books.length + 1,
+    title: title.trim(),
+    author: author.trim(),
+    tags: tags || [],
+    created_at: new Date().toISOString()
+  };
+
+  books.push(newBook)
+
+  return res.status(201).json(newBook);
+})
+
+app.get('/api/debug/types', (req, res) => {
+  if (books.length === 0) return res.status(404).json({"error": "No books yet"})
+
+  const book = books[0]
+
+  return res.json({
+    id: typeof book.id,
+    title: typeof book.title,
+    author: typeof book.author,
+    tags: Array.isArray(book.tags),
+    created_at: typeof book.created_at
+  });
+});
+
 app.get('/api/v1/books/:id', (req, res) => {
 
   const { id } = req.params
