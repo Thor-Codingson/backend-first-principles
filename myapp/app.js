@@ -1,8 +1,11 @@
 const express = require('express')
+const jwt = require('jsonwebtoken');
+//const { use } = require('react');
 const app = express()
 const port = 3000
-app.use(express.json())
+const SECRET_KEY = 'super-secret-key-from-env-variable'; // NEVER hardcode in real apps
 
+app.use(express.json())
 
 const books = [
   { id: 1, title: 'Clean Code', author: 'Robert Martin', tags: ['programming'], created_at: '2024-01-15' },
@@ -10,6 +13,10 @@ const books = [
   { id: 3, title: 'The Pragmatic Programmer', author: 'David Thomas', tags: ['programming', 'career'], created_at: '2024-03-10' },
 ];
 
+const users = [
+  { id: 1, email: 'umang@test.com', password: 'password123', role: 'user' },
+  { id: 2, email: 'admin@test.com', password: 'admin123', role: 'admin' },
+];
 
 function corsMiddleware(req, res, next){
   const origin = req.headers.origin;
@@ -26,6 +33,33 @@ function corsMiddleware(req, res, next){
 
 app.use(corsMiddleware);
 
+function authenticate(req, res, next){
+  const authHeader = req.headers.authorization
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')){
+    return res.status(401).json({error: 'Missing or invalid token'})
+  }
+
+  const token = authHeader.split(' ')[1]
+
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY)
+    req.user = decoded;
+    next()
+  } catch(err) {
+    return res.status(401).json({error: 'Invalid or expired token'})
+  }
+}
+
+function authorize(requiredRole){
+  return function(req, res, next) {
+    if (req.user.role !== requiredRole) {
+      return res.status(403).json({error:'Forbidden or Insufficient permission'})
+    }
+    next();
+  };
+}
+
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
@@ -33,12 +67,12 @@ app.get('/', (req, res) => {
 app.get('/debug', (req, res) => {
   //console.log(req.headers);  // Print EVERYTHING the client sent
   //res.json(req.headers);     // Send it back so you can see it
-
-  console.log('params:', req.params);
-  console.log('query:', req.query);
-  console.log('body:', req.body);
-  res.json({ params: req.params, query: req.query, body: req.body });
-
+  console.log('header', req.headers)
+  // console.log('params:', req.params);
+  // console.log('query:', req.query);
+  // console.log('body:', req.body);
+  // res.json({ params: req.params, query: req.query, body: req.body });
+  res.json({headers: req.headers.authorization})
 });
 
 app.get('/public', (req,res) => {
@@ -48,6 +82,25 @@ app.get('/public', (req,res) => {
 app.get('/private', (req, res) => {
   res.json({"message": "This is private"})
 })
+
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+
+  const user = users.find(u => u.email === email && u.password === password);
+
+  if (!user) {
+    return res.status(401).json({error: 'Invalid credentials'})
+  }
+
+  const token = jwt.sign(
+    {userId: user.id, email: user.email, role: user.role},
+    SECRET_KEY,
+    {expiresIn: '1h'}
+  );
+
+  res.json({token})
+})
+
 
 app.post('/user', (req, res) => {
 
@@ -59,7 +112,7 @@ app.post('/user', (req, res) => {
   res.status(201).json({created: true});
 })
 
-app.get('/api/v1/books', (req, res) => {
+app.get('/api/v1/books', authenticate, authorize('admin'), (req, res) => {
 
   let result = books;
 
@@ -78,7 +131,7 @@ app.get('/api/v1/books', (req, res) => {
   res.json(filteredBooks)
 })
 
-app.get('/api/v2/books', (req, res) => {
+app.get('/api/v2/books', authenticate, (req, res) => {
 
   let result = books;
 
@@ -89,7 +142,11 @@ app.get('/api/v2/books', (req, res) => {
   res.json(result);
 })
 
-app.post('/api/v1/books', (req, res) => {
+app.post('/api/v1/books', authenticate, authorize('admin'), (req, res) => {
+
+  if (!req.body) {
+    return res.status(400).json({ error: "Request body is missing" });
+  }
 
   const {title, author, tags} = req.body
 
