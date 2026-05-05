@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const app = express()
 const port = 3000
 const SECRET_KEY = 'super-secret-key-from-env-variable'; // NEVER hardcode in real apps
+const { z } = require('zod');
 
 app.use(express.json())
 
@@ -59,6 +60,32 @@ function authorize(requiredRole){
     next();
   };
 }
+
+function validate(schema) {
+  return (req, res, next) => {
+    const result = schema.safeParse(req.body);
+
+    if (!result.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        issues: result.error.issues.map(issue => ({
+           field: issue.path.join('.'),
+          message: issue.message
+        }))
+      });
+    }
+
+    req.body = result.data;
+    next();
+  }
+}
+
+const bookSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  author: z.string().trim().min(1).max(100),
+  tags: z.array(z.string().trim()).max(5).optional(),
+  published_year: z.number().int().min(1500).max(new Date().getFullYear()).optional()
+});
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
@@ -142,22 +169,22 @@ app.get('/api/v2/books', authenticate, (req, res) => {
   res.json(result);
 })
 
-app.post('/api/v1/books', authenticate, authorize('admin'), (req, res) => {
+app.post('/api/v1/books', authenticate, authorize('admin'), validate(bookSchema), (req, res) => {
 
-  if (!req.body) {
-    return res.status(400).json({ error: "Request body is missing" });
-  }
+  // if (!req.body) {
+  //   return res.status(400).json({ error: "Request body is missing" });
+  // }
 
   const {title, author, tags} = req.body
 
-  if (!title || title.trim() === '' || !author || author.trim() === '') {
-    return res.status(404).send({"error" : "Name or title is required"})
-  }
+  // if (!title || title.trim() === '' || !author || author.trim() === '') {
+  //   return res.status(404).send({"error" : "Name or title is required"})
+  // }
 
   const newBook = {
     id: books.length + 1,
-    title: title.trim(),
-    author: author.trim(),
+    title: title,
+    author: author,
     tags: tags || [],
     created_at: new Date().toISOString()
   };
