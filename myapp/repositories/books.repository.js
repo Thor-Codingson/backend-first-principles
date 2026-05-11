@@ -4,22 +4,29 @@ const books = [
   { id: 3, title: 'The Pragmatic Programmer', author: 'David Thomas', tags: ['programming', 'career'], created_at: '2024-03-10' },
 ];
 
-function findAll(filters = {}) {
+function findAll({ page, limit, sortBy, sortOrder, author }) {
   let result = books;
 
-  if (filters.author) {
-    result = books.filter(book => book.author.toLowerCase().includes(filters.author.toLowerCase()))
+  if (author) {
+    result = result.filter(b => b.author.toLowerCase().includes(author.toLowerCase()));
   }
 
-  const filteredBooks = result.map(book => {
-    return {
-      id: book.id,
-      title: book.title,
-      author: book.author
-    }
+  // Step 2: SORT
+  result = [...result].sort((a, b) => {
+    const aVal = a[sortBy];
+    const bVal = b[sortBy];
+    if (sortOrder === 'asc') return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+    return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
   });
 
-  return filteredBooks;
+  // Step 3: capture total BEFORE pagination
+  const total = result.length;
+
+  // Step 4: PAGINATE
+  const startIndex = (page - 1) * limit;
+  const items = result.slice(startIndex, startIndex + limit);
+
+  return { items, total };
 }
 
 function findById(id) {

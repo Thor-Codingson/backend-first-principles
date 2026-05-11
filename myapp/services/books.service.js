@@ -1,7 +1,15 @@
 const booksRepo = require('../repositories/books.repository')
 
-function getAllBooks(authorQuery) {
-    return booksRepo.findAll({ author: authorQuery });
+function getAllBooks(options) {
+  const { items, total } = booksRepo.findAll(options);
+
+  return {
+    data: items,
+    total,
+    page: options.page,
+    totalPages: Math.ceil(total / options.limit),
+    limit: options.limit
+  };
 }
 
 function getBookById(id) {

@@ -3,15 +3,15 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/authenticate');
 const authorize = require('../middleware/authorize')
-const schema = require('../schemas/books.schema')
+const {bookSchema, listBooksQuerySchema} = require('../schemas/books.schema')
 const bookService = require('../services/books.service')
 const validate = require('../middleware/validate')
 
 
-router.get('/', authenticate, authorize('admin'), (req, res, next) => {
+router.get('/', authenticate, authorize('admin'), validate({ query: listBooksQuerySchema }), (req, res, next) => {
   // your GET /api/v1/books logic
   try {
-    const books = bookService.getAllBooks(req.query.author)
+    const books = bookService.getAllBooks(req.validatedQuery)
     res.json(books)
   } catch (err) {
     next(err)
@@ -27,7 +27,7 @@ router.get('/:id', authenticate, authorize('admin'), (req, res, next) => {
   }
 })
 
-router.post('/', authenticate, authorize('admin'), validate(schema), (req, res, next) => {
+router.post('/', authenticate, authorize('admin'), validate({ body: bookSchema }), (req, res, next) => {
   try {
     const newBook = bookService.newBook(req.body)
     res.status(201).json(newBook)
