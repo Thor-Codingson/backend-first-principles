@@ -8,37 +8,37 @@ const bookService = require('../services/books.service')
 const validate = require('../middleware/validate')
 
 
-router.get('/', authenticate, authorize('admin'), validate({ query: listBooksQuerySchema }), (req, res, next) => {
+router.get('/', authenticate, authorize('admin'), validate({ query: listBooksQuerySchema }), async(req, res, next) => {
   // your GET /api/v1/books logic
   try {
-    const books = bookService.getAllBooks(req.validatedQuery)
+    const books = await bookService.getAllBooks(req.validatedQuery)
     res.json(books)
   } catch (err) {
     next(err)
   }
 });
 
-router.get('/:id', authenticate, authorize('admin'), (req, res, next) => {
+router.get('/:id', authenticate, authorize('admin'), async (req, res, next) => {
   try {
-    const book = bookService.getBookById(Number(req.params.id));
+    const book = await bookService.getBookById(Number(req.params.id));
     res.json(book);
   } catch (err) {
     next(err)
   }
 })
 
-router.post('/', authenticate, authorize('admin'), validate({ body: bookSchema }), (req, res, next) => {
+router.post('/', authenticate, authorize('admin'), validate({ body: bookSchema }), async (req, res, next) => {
   try {
-    const newBook = bookService.newBook(req.body)
+    const newBook = await bookService.newBook(req.body)
     res.status(201).json(newBook)
   } catch (err) {
     next(err)
   }
 })
 
-router.get('/:bookId/tags', (req, res, next) => {
+router.get('/:bookId/tags', async (req, res, next) => {
   try {
-    const book = bookService.getBookById(Number(req.params.bookId))
+    const book = await bookService.getBookById(Number(req.params.bookId))
     res.json(book.tags)
   } catch (err) {
     next(err)

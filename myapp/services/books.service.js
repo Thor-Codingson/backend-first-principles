@@ -1,7 +1,7 @@
 const booksRepo = require('../repositories/books.repository')
 
-function getAllBooks(options) {
-  const { items, total } = booksRepo.findAll(options);
+async function getAllBooks(options) {
+  const { items, total } = await booksRepo.findAll(options);
 
   return {
     data: items,
@@ -12,21 +12,21 @@ function getAllBooks(options) {
   };
 }
 
-function getBookById(id) {
-    const book = booksRepo.findById(id)
+async function getBookById(id) {
+    const book = await booksRepo.findById(id)
 
     if (!book) { const e = new Error(`Book ${id} not found`); e.name = 'NotFoundError'; throw e; }
 
     return book;
 }
 
-function newBook(book) {
+async function newBook(book) {
     const data = {
         ...book,
         tags: book.tags || []
     }
 
-    return booksRepo.insert(data)
+    return await booksRepo.insert(data)
 }
 
 module.exports = { getAllBooks, getBookById, newBook }
