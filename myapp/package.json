@@ -7,10 +7,11 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-  "start": "node app.js",
-  "migrate": "node-pg-migrate"
+    "start": "node app.js",
+    "migrate": "node-pg-migrate"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "pg": "^8.20.0",
