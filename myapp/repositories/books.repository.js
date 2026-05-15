@@ -11,13 +11,11 @@ async function findAll({ page, limit, sortBy, sortOrder, author }) {
   }
 
   // 2. Whitelist sort column + direction
-  // ... your code
   const ALLOWED_SORT = ['title', 'author', 'created_at'];
   const column = ALLOWED_SORT.includes(sortBy) ? sortBy : 'created_at';
   const direction = sortOrder === 'asc' ? 'ASC' : 'DESC';
 
   // 3. Count query (use whereClause + params)
-  // ... your code
 
   const countResult = await pool.query(
     `SELECT COUNT(*)::int AS total FROM books ${whereClause}`,
@@ -28,7 +26,6 @@ async function findAll({ page, limit, sortBy, sortOrder, author }) {
 
   // 4. Data query (whereClause + ORDER BY + LIMIT + OFFSET)
   //    Add limit and offset to params array, use $${params.length} for placeholders
-  // ... your code
   params.push(limit);
   const limitPlaceholder = `$${params.length}`;
 
@@ -62,7 +59,29 @@ async function insert(book) {
   return rows[0];
 }
 
-module.exports = { findAll, findById, insert }
+async function update(id, book) {
+  const ALLOWED_FIELDS = ['title', 'author', 'tags'];
+  const fields = Object.keys(book).filter(f => ALLOWED_FIELDS.includes(f));
+
+  if (fields.length === 0) {
+    throw new Error('No valid fields to update');
+  }
+
+  const values = fields.map(f => book[f]);
+
+  const setClause = fields
+    .map((field, index) => `${field} = $${index + 1}`)
+    .join(', ');
+
+  const { rows } = await pool.query(
+    `UPDATE books SET ${setClause} WHERE id = $${fields.length + 1} RETURNING *`,
+    [...values, id]
+  );
+
+  return rows[0];
+}
+
+module.exports = { findAll, findById, insert, update }
 
 /*
 const books = [

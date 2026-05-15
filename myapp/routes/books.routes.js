@@ -18,6 +18,15 @@ router.get('/', authenticate, authorize('admin'), validate({ query: listBooksQue
   }
 });
 
+router.put('/:id', authenticate, authorize('admin'), validate({ body: bookSchema}), async(req, res, next) => {
+  try {
+    const updateBook = await bookService.updateBook(Number(req.params.id),req.body)
+    res.status(200).json(updateBook)
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.get('/:id', authenticate, authorize('admin'), async (req, res, next) => {
   try {
     const book = await bookService.getBookById(Number(req.params.id));

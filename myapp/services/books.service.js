@@ -1,3 +1,4 @@
+const redis = require('../redis');
 const booksRepo = require('../repositories/books.repository')
 
 async function getAllBooks(options) {
@@ -13,14 +14,28 @@ async function getAllBooks(options) {
 }
 
 async function getBookById(id) {
-    const book = await booksRepo.findById(id)
 
-    if (!book) { const e = new Error(`Book ${id} not found`); e.name = 'NotFoundError'; throw e; }
+  let book = await redis.get(`book:${id}`)
 
-    return book;
+  if (book) {
+    return JSON.parse(book);
+  }
+
+  book = await booksRepo.findById(id)
+  if (!book) { const e = new Error(`Book ${id} not found`); e.name = 'NotFoundError'; throw e; }
+
+  await redis.set(`book:${id}`, JSON.stringify(book), 'EX', 300)
+  return book;
 }
 
-async function newBook(book) {
+async function updateBook(id, book) {
+  const updated = await booksRepo.update(id, book);
+  await redis.del(`book:${id}`);
+
+  return updated;
+}
+
+async function newBook(id, book) {
     const data = {
         ...book,
         tags: book.tags || []
@@ -29,4 +44,4 @@ async function newBook(book) {
     return await booksRepo.insert(data)
 }
 
-module.exports = { getAllBooks, getBookById, newBook }
+module.exports = { getAllBooks, getBookById, newBook, updateBook }
