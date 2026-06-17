@@ -1,30 +1,24 @@
 const { Worker } = require('bullmq');
 
+// 1. Connect to same 'email' queue in Redis
+//    Handler runs automatically when a job arrives
 const worker = new Worker('email', async (job) => {
-  // job.name → 'send-verification'
-  // job.data → { email, verificationCode }
 
+  // 2. job.name → which type of job is this?
+  //    job.data → the payload from addEmailJob()
   console.log(`Processing job ${job.id}: ${job.name}`);
-  console.log(`Sending verification email to ${job.data.email}`);
+  console.log(`Sending email to ${job.data.email}`);
 
-  // Simulate slow email API call
-  // await new Promise(resolve => setTimeout(resolve, 2000));
-  throw new Error('Email provider is down');
+  // Simulate slow email API (2 seconds)
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
-  console.log(`Email sent to ${job.data.email} with code ${job.data.verificationCode}`);
+  // If we throw here → BullMQ treats as failure → retries
+  console.log(`Email sent to ${job.data.email}`);
 
-  // If we throw here, BullMQ treats it as failure and retries
 }, {
-  connection: {
-    host: 'localhost',
-    port: 6379,
-  }
+  connection: { host: 'localhost', port: 6379 }
 });
 
-worker.on('completed', (job) => {
-  console.log(`Job ${job.id} completed`);
-});
-
-worker.on('failed', (job, err) => {
-  console.log(`Job ${job.id} failed:`, err.message);
-});
+// 3. Event listeners — for logging/monitoring
+worker.on('completed', (job) => console.log(`Job ${job.id} completed`));
+worker.on('failed', (job, err) => console.log(`Job ${job.id} failed:`, err.message));
