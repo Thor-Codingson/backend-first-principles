@@ -8,10 +8,12 @@
   "main": "index.js",
   "scripts": {
     "start": "node app.js",
+    "worker": "node workers/email.worker.js",
     "migrate": "node-pg-migrate"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.78.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "ioredis": "^5.10.1",
