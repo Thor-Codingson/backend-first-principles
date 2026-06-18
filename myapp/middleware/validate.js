@@ -1,3 +1,5 @@
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
 // generic shape — works regardless of validation library
 function validate({ body, query, params } = {}) {
   return (req, res, next) => {

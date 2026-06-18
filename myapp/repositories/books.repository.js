@@ -81,7 +81,21 @@ async function update(id, book) {
   return rows[0];
 }
 
-module.exports = { findAll, findById, insert, update }
+async function findByTitle(searchTerm) {
+  const { rows } = await pool.query(
+    `SELECT id, title, author, created_at,
+      ts_rank(search_vector, query) AS rank
+    FROM books, plainto_tsquery('english', $1) query
+    WHERE search_vector @@ query
+    ORDER BY rank DESC
+    LIMIT 50`,
+    [searchTerm]
+  )
+
+  return rows;
+}
+
+module.exports = { findAll, findById, insert, update, findByTitle }
 
 /*
 const books = [

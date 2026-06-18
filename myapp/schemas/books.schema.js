@@ -15,4 +15,8 @@ const listBooksQuerySchema = z.object({
   author: z.string().trim().optional()
 });
 
-module.exports = { bookSchema, listBooksQuerySchema };
+const titleSchema = z.object({
+  q: z.string().trim().min(1).max(120)
+});
+
+module.exports = { bookSchema, listBooksQuerySchema, titleSchema};

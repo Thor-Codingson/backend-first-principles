@@ -3,14 +3,18 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/authenticate');
 const authorize = require('../middleware/authorize')
-const {bookSchema, listBooksQuerySchema} = require('../schemas/books.schema')
+const {bookSchema, listBooksQuerySchema, titleSchema} = require('../schemas/books.schema')
 const bookService = require('../services/books.service')
 const validate = require('../middleware/validate')
 
 
-router.get('/', authenticate, authorize('admin'), validate({ query: listBooksQuerySchema }), async(req, res, next) => {
+router.get('/', validate({ query: listBooksQuerySchema }), async(req, res, next) => {
   // your GET /api/v1/books logic
   try {
+    if (req.query.q) {
+      const results = await bookService.searchResult(req.query.q);
+      return res.json(results);
+    }
     const books = await bookService.getAllBooks(req.validatedQuery)
     res.json(books)
   } catch (err) {
@@ -54,6 +58,8 @@ router.get('/:bookId/tags', async (req, res, next) => {
   }
 })
 
+module.exports = router;
+
 // app.get('/api/v1/books/:bookId/tags', (req, res) => {
 //   const { bookId } = req.params
 
@@ -84,5 +90,3 @@ router.get('/:bookId/tags', async (req, res, next) => {
 
 //   res.json(filteredBooks)
 // })
-
-module.exports = router;

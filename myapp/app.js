@@ -15,7 +15,6 @@ app.use(corsMiddleware);
 
 app.use('/api/auth', authRouter)
 app.use('/api/v1/books', booksRouter);
-
 // const books = [
 //   { id: 1, title: 'Clean Code', author: 'Robert Martin', tags: ['programming'], created_at: '2024-01-15' },
 //   { id: 2, title: 'Designing Data-Intensive Apps', author: 'Martin Kleppmann', tags: ['systems', 'databases'], created_at: '2024-02-20' },

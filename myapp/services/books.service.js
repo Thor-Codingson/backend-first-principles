@@ -44,4 +44,12 @@ async function newBook(id, book) {
     return await booksRepo.insert(data)
 }
 
-module.exports = { getAllBooks, getBookById, newBook, updateBook }
+async function searchResult(searchTerm) {
+  let books = await booksRepo.findByTitle(searchTerm);
+
+  if (!books) { const e = new Error(`Book ${searchTerm} not found`); e.name = 'NotFoundError'; throw e; }
+
+  return books;
+}
+
+module.exports = { getAllBooks, getBookById, newBook, updateBook, searchResult }
