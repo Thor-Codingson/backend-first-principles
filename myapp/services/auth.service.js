@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const usersRepository = require('../repositories/users.repository')
 const { addEmailJob } = require('../queues/email.queue');
 
-const SECRET_KEY = 'super-secret-key-from-env-variable'; // NEVER hardcode in real apps
+const SECRET_KEY = process.env.JWT_SECRET; // NEVER hardcode in real apps
 
 async function login(email, password) {
   // Business logic: validate credentials, create token

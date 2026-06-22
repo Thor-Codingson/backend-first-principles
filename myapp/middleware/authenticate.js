@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = 'super-secret-key-from-env-variable'; // NEVER hardcode in real apps
+const SECRET_KEY = process.env.JWT_SECRET; // NEVER hardcode in real apps
 
 function authenticate(req, res, next){
   const authHeader = req.headers.authorization

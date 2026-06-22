@@ -1,10 +1,12 @@
 require('dotenv').config();
+require('./config');
 const express = require('express')
 // const jwt = require('jsonwebtoken');
 const requestId = require('./middleware/requestId')
 const corsMiddleware = require('./middleware/cors')
 const authRouter = require('./routes/auth.routes')
 const booksRouter = require('./routes/books.routes')
+const healthRouter = require('./routes/health.routes')
 const app = express()
 const port = 3000
 // const SECRET_KEY = 'super-secret-key-from-env-variable'; // NEVER hardcode in real apps
@@ -15,6 +17,7 @@ app.use(corsMiddleware);
 
 app.use('/api/auth', authRouter)
 app.use('/api/v1/books', booksRouter);
+app.use('/api/v1/health', healthRouter);
 // const books = [
 //   { id: 1, title: 'Clean Code', author: 'Robert Martin', tags: ['programming'], created_at: '2024-01-15' },
 //   { id: 2, title: 'Designing Data-Intensive Apps', author: 'Martin Kleppmann', tags: ['systems', 'databases'], created_at: '2024-02-20' },
