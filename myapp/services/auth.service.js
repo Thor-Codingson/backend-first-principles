@@ -12,6 +12,9 @@ async function login(email, password) {
   const user = await usersRepository.findByEmail(email);
 
   if (!user) {
+    await bcrypt.compare(password, '$2b$10$invalidhashpadding000000000000000000000000000000000000');
+   // deliberately waste ~100ms to match the timing of a real bcrypt comparison
+
     const err = new Error('Invalid credentials');
     err.name = 'UnauthorizedError';
     throw err;  // ← throws, never calls res.json()
@@ -20,7 +23,7 @@ async function login(email, password) {
   const match = await bcrypt.compare(password, user.password);
 
   if (!match) {
-    const err = new Error('Invalid Credentials');
+    const err = new Error('Invalid credentials');
     err.name = "UnauthorizedError"
     throw err;
   }
