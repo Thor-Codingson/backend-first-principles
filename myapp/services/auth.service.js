@@ -12,6 +12,7 @@ async function login(email, password) {
   const user = await usersRepository.findByEmail(email);
 
   if (!user) {
+    logger.warn({ requestId: 'N/A' }, 'login failed — email not found');
     await bcrypt.compare(password, '$2b$10$invalidhashpadding000000000000000000000000000000000000');
    // deliberately waste ~100ms to match the timing of a real bcrypt comparison
 
@@ -23,6 +24,7 @@ async function login(email, password) {
   const match = await bcrypt.compare(password, user.password);
 
   if (!match) {
+    logger.warn({ requestId: 'N/A' }, 'login failed — wrong password');
     const err = new Error('Invalid credentials');
     err.name = "UnauthorizedError"
     throw err;

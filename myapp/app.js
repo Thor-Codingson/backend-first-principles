@@ -7,6 +7,7 @@ const corsMiddleware = require('./middleware/cors')
 const authRouter = require('./routes/auth.routes')
 const booksRouter = require('./routes/books.routes')
 const healthRouter = require('./routes/health.routes')
+const logger = require('./logger');
 const app = express()
 const port = 3000
 // const SECRET_KEY = 'super-secret-key-from-env-variable'; // NEVER hardcode in real apps
@@ -217,7 +218,7 @@ app.use((req, res) => {
 })
 
 app.use((err, req, res, next) => {
-  console.error(`[${req.requestId}] Error:`, err.message);
+  logger.error({ err, requestId: req.requestId }, 'request failed');
 
   if (err.name === 'UnauthorizedError') return res.status(401).json({ error: err.message });
   if (err.name === 'NotFoundError') return res.status(404).json({ error: err.message });
