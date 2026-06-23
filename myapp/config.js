@@ -1,17 +1,18 @@
 // config.js
-const REQUIRED = ['DATABASE_URL', 'REDIS_URL', 'JWT_SECRET'];
+const {z, number} = require('zod')
 
-const missing = REQUIRED.filter((key) => !process.env[key]);
+const envSchema = z.object({
+  DATABASE_URL: z.url(),
+  REDIS_URL: z.url(),
+  JWT_SECRET: z.string().min(16),
+  PORT: z.coerce.number().default(3000)
+})
 
-if (missing.length > 0) {
-  console.error(`FATAL: Missing required environment variables: ${missing.join(', ')}`);
-  console.error('Server refused to start. Fix your .env and try again.');
+const result = envSchema.safeParse(process.env)
+
+if (!result.success) {
+  console.error('FATAL: Invalid config: ', result.error.issues);
   process.exit(1);
 }
 
-module.exports = {
-  databaseUrl: process.env.DATABASE_URL,
-  redisUrl: process.env.REDIS_URL,
-  jwtSecret: process.env.JWT_SECRET,
-  port: process.env.PORT || 3000,
-};
+module.exports = result.data;
