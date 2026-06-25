@@ -8,6 +8,8 @@ const authRouter = require('./routes/auth.routes')
 const booksRouter = require('./routes/books.routes')
 const healthRouter = require('./routes/health.routes')
 const logger = require('./logger');
+const redis = require('./redis');
+const pool = require('./db');
 const app = express()
 const port = 3000
 // const SECRET_KEY = 'super-secret-key-from-env-variable'; // NEVER hardcode in real apps
@@ -19,6 +21,83 @@ app.use(corsMiddleware);
 app.use('/api/auth', authRouter)
 app.use('/api/v1/books', booksRouter);
 app.use('/api/v1/health', healthRouter);
+
+
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
+
+app.get('/debug', (req, res) => {
+  //console.log(req.headers);  // Print EVERYTHING the client sent
+  //res.json(req.headers);     // Send it back so you can see it
+  console.log('header', req.headers)
+  // console.log('params:', req.params);
+  // console.log('query:', req.query);
+  // console.log('body:', req.body);
+  // res.json({ params: req.params, query: req.query, body: req.body });
+  res.json({headers: req.headers.authorization})
+});
+
+app.get('/public', (req,res) => {
+  res.json({message: 'This is public'})
+})
+
+app.get('/private', (req, res) => {
+  res.json({"message": "This is private"})
+})
+
+
+app.post('/user', (req, res) => {
+
+  const {name} = req.body;
+
+  if (!name || name.trim() === '')
+    return res.status(400).send({"error": "Name is required"})
+
+  res.status(201).json({created: true});
+})
+
+app.use((req, res) => {
+  res.status(404).json({error: "Route not found"})
+})
+
+app.use((err, req, res, next) => {
+  logger.error({ err, requestId: req.requestId }, 'request failed');
+
+  if (err.name === 'UnauthorizedError') return res.status(401).json({ error: err.message });
+  if (err.name === 'NotFoundError') return res.status(404).json({ error: err.message });
+  if (err.name === 'ConflictError') return res.status(409).json({ error: err.message });
+
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+const server = app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`)
+})
+
+function shutdown() {
+  logger.info('shutdown signal received — draining HTTP connections');
+
+  server.close(async () => {
+    logger.info('HTTP server closed — closing Postgres pool');
+    await pool.end();
+    logger.info('Postgres pool closed — closing Redis');
+    await redis.quit();
+    logger.info('Redis closed — exiting cleanly');
+    process.exit(0);
+  });
+
+  server.closeIdleConnections();
+
+  setTimeout(() => {
+    logger.error('shutdown timed out after 30s — forcing exit');
+    process.exit(1);
+  }, 30000).unref();
+}
+
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
 // const books = [
 //   { id: 1, title: 'Clean Code', author: 'Robert Martin', tags: ['programming'], created_at: '2024-01-15' },
 //   { id: 2, title: 'Designing Data-Intensive Apps', author: 'Martin Kleppmann', tags: ['systems', 'databases'], created_at: '2024-02-20' },
@@ -83,40 +162,6 @@ app.use('/api/v1/health', healthRouter);
 //   tags: z.array(z.string().trim()).max(5).optional(),
 //   published_year: z.number().int().min(1500).max(new Date().getFullYear()).optional()
 // });
-
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
-
-app.get('/debug', (req, res) => {
-  //console.log(req.headers);  // Print EVERYTHING the client sent
-  //res.json(req.headers);     // Send it back so you can see it
-  console.log('header', req.headers)
-  // console.log('params:', req.params);
-  // console.log('query:', req.query);
-  // console.log('body:', req.body);
-  // res.json({ params: req.params, query: req.query, body: req.body });
-  res.json({headers: req.headers.authorization})
-});
-
-app.get('/public', (req,res) => {
-  res.json({message: 'This is public'})
-})
-
-app.get('/private', (req, res) => {
-  res.json({"message": "This is private"})
-})
-
-
-app.post('/user', (req, res) => {
-
-  const {name} = req.body;
-
-  if (!name || name.trim() === '')
-    return res.status(400).send({"error": "Name is required"})
-
-  res.status(201).json({created: true});
-})
 
 // app.get('/api/v1/books', authenticate, authorize('admin'), (req, res) => {
 
@@ -212,21 +257,3 @@ app.post('/user', (req, res) => {
 
 //   res.json(result.tags)
 // })
-
-app.use((req, res) => {
-  res.status(404).json({error: "Route not found"})
-})
-
-app.use((err, req, res, next) => {
-  logger.error({ err, requestId: req.requestId }, 'request failed');
-
-  if (err.name === 'UnauthorizedError') return res.status(401).json({ error: err.message });
-  if (err.name === 'NotFoundError') return res.status(404).json({ error: err.message });
-  if (err.name === 'ConflictError') return res.status(409).json({ error: err.message });
-
-  res.status(500).json({ error: 'Internal server error' });
-});
-
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
