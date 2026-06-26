@@ -95,7 +95,22 @@ async function findByTitle(searchTerm) {
   return rows;
 }
 
-module.exports = { findAll, findById, insert, update, findByTitle }
+async function findAllWithTags() {
+    const { rows } = await pool.query(
+        `
+        SELECT b.id, b.title, COALESCE( json_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '[]'::json )
+        AS tags
+        FROM books b
+        LEFT JOIN book_tags bt ON b.id = bt.book_id
+        LEFT JOIN tags t ON t.id = bt.tag_id
+        GROUP BY b.id
+        ORDER BY b.id
+        `
+    )
+    return rows;
+}
+
+module.exports = { findAll, findById, insert, update, findByTitle, findAllWithTags }
 
 /*
 const books = [
