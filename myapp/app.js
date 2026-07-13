@@ -7,6 +7,7 @@ const corsMiddleware = require('./middleware/cors')
 const authRouter = require('./routes/auth.routes')
 const booksRouter = require('./routes/books.routes')
 const healthRouter = require('./routes/health.routes')
+const compression = require('compression');
 const logger = require('./logger');
 const redis = require('./redis');
 const pool = require('./db');
@@ -17,6 +18,7 @@ const port = 3000
 app.use(express.json());
 app.use(requestId);
 app.use(corsMiddleware);
+// app.use(compression());
 
 app.use('/api/auth', authRouter)
 app.use('/api/v1/books', booksRouter);
